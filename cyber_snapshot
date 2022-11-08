@@ -1,6 +1,6 @@
 #!/bin/bash
 CHAIN_ID="bostrom_pruned"
-SNAP_PATH="/mnt/nvme4tb/snapshots/cyber"
+SNAP_PATH="/mnt/nvme4tb/shared"
 LOG_PATH="/mnt/nvme4tb/snapshots/cyber/cyber_log.txt"
 DATA_PATH="/mnt/nvme4tb/.cyber/"
 SERVICE_NAME="bostrom_pruned"
