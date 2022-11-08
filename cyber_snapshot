@@ -5,6 +5,7 @@ LOG_PATH="/mnt/nvme4tb/snapshots/cyber/cyber_log.txt"
 DATA_PATH="/mnt/nvme4tb/.cyber/"
 SERVICE_NAME="bostrom_pruned"
 RPC_ADDRESS="http://localhost:28957"
+LAST_BLOCK_HEIGHT=$(docker exec -ti bostrom_pruned cyber status | jq -r .SyncInfo.latest_block_height)
 SNAP_NAME=$(echo "${CHAIN_ID}_${LAST_BLOCK_HEIGHT}_$(date '+%Y-%m-%d').tar")
 OLD_SNAP=$(ls ${SNAP_PATH} | egrep -o "${CHAIN_ID}.*tar")
 
@@ -21,14 +22,13 @@ log_this() {
     printf "|$(now_date)| $logging\n" | tee -a ${LOG_PATH}
 }
 
-LAST_BLOCK_HEIGHT=$(docker exec -ti bostrom_pruned cyber status | jq -r .SyncInfo.latest_block_height)
 log_this "LAST_BLOCK_HEIGHT ${LAST_BLOCK_HEIGHT}"
 
 log_this "Stopping ${SERVICE_NAME}"
 docker stop ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
 
 log_this "Creating new snapshot"
-time tar --exclude='bak' --exclude='config' --exclude='cosmovisor' --exclude='cuda-keyring_1.0-1_all.deb' --exclude='priv_validator_key.json' --exclude='cache' -zcvf ${HOME}/${SNAP_NAME} -C ${DATA_PATH} . &>>${LOG_PATH}
+time tar --exclude='bak' --exclude='config' --exclude='cosmovisor' --exclude='cuda-keyring_1.0-1_all.deb' --exclude='priv_validator_key.json' --exclude='cache' -zcvf ${SNAP_PATH}/${SNAP_NAME} -C ${DATA_PATH} . &>>${LOG_PATH}
 
 log_this "Starting ${SERVICE_NAME}"
 docker start ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
