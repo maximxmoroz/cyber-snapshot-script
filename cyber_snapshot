@@ -37,9 +37,6 @@ log_this "Removing old snapshot(s):"
 cd ${SNAP_PATH}
 rm -fv ${OLD_SNAP} &>>${LOG_PATH}
 
-log_this "Moving new snapshot to ${SNAP_PATH}"
-mv ${HOME}/${CHAIN_ID}*tar ${SNAP_PATH} &>>${LOG_PATH}
-
 du -hs ${SNAP_PATH} | tee -a ${LOG_PATH}
 
 log_this "Done\n---------------------------\n"
