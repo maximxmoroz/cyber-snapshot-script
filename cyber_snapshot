@@ -9,6 +9,7 @@ RPC_ADDRESS="http://localhost:28957"
 LAST_BLOCK_HEIGHT=$(docker exec -t bostrom_pruned cyber status | jq -r .SyncInfo.latest_block_height)
 SNAP_NAME=$(echo "${CHAIN_ID}_${LAST_BLOCK_HEIGHT}_$(date '+%Y-%m-%d').tar")
 OLD_SNAP=$(ls ${SNAP_PATH} | egrep -o "${CHAIN_ID}.*tar")
+IPFS_HASH="/mnt/nvme4tb/shared/ipfs_hash"
 export IPFS_PATH="/mnt/nvme4tb/.ipfs"
 export CYBER_PATH="/root/.cyber"
 
@@ -28,7 +29,10 @@ rm /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
 touch /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
 
 log_this "remove old ipfs pins"
-ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
+ipfs pin rm ${IPFS_HASH}
+
+log_this "remove old ipfs garbage"
+ipfs repo gc &>>${LOG_PATH}
 
 log_this "LAST_BLOCK_HEIGHT ${LAST_BLOCK_HEIGHT}"
 
