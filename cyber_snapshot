@@ -23,6 +23,11 @@ log_this() {
     printf "|$(now_date)| $logging\n" | tee -a ${LOG_PATH}
 }
 
+log_this "remove and create cyber log file"
+rm /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
+touch /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
+
+log_this "remove old ipfs pins"
 ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
 
 log_this "LAST_BLOCK_HEIGHT ${LAST_BLOCK_HEIGHT}"
@@ -56,14 +61,18 @@ SNAPSHOT_HASH="/mnt/nvme4tb/shared/snapshot_hash"
 IPFS_HASH="/mnt/nvme4tb/shared/ipfs_hash"
 IPFS_BLOCK="/mnt/nvme4tb/shared/ipfs_block"
 IPFS_BLOCK_HASH="/mnt/nvme4tb/shared/ipfs_block_hash"
+TWEET_HASH="/mnt/nvme4tb/shared/tweet_hash"
+MANUAL="/mnt/nvme4tb/shared/manual"
 
 log_this "add cyberlinks from snapshot to block number and from block number to actual snap"
 sleep 8
-cyber tx graph cyberlink $(cat ${SNAPSHOT_HASH}) $(cat ${IPFS_BLOCK_HASH}) --from max --keyring-backend test --chain-id bostrom -y &>> ${LOG_PATH}
+cyber tx graph cyberlink $(cat ${TWEET_HASH}) $(cat ${IPFS_BLOCK_HASH}) --from snapshot_bot --keyring-backend test --chain-id bostrom -y &>> ${LOG_PATH}
 sleep 8
-cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${IPFS_HASH}) --from max --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
+cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${IPFS_HASH}) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
 sleep 8
-cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${SNAP_URL_HASH}) --from max --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
+cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${SNAP_URL_HASH}) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
+sleep 8
+cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${MANUAL}) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
 
 log_this "Starting ${SERVICE_NAME}"
 docker container start ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
