@@ -25,7 +25,20 @@ log_this() {
 }
 
 log_this "remove and create cyber log file"
+rm /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
+touch /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
 
+log_this "remove old ipfs pins"
+ipfs pin rm ${IPFS_HASH}
+
+log_this "remove old ipfs garbage"
+ipfs repo gc
+sleep 8
+
+log_this "LAST_BLOCK_HEIGHT ${LAST_BLOCK_HEIGHT}"
+
+log_this "Stopping ${SERVICE_NAME}"
+docker stop ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
 
 log_this "Creating new snapshot"
 time tar --exclude='bak' --exclude='config' --exclude='cosmovisor' --exclude='cuda-keyring_1.0-1_all.deb' --exclude='priv_validator_key.json' --exclude='cache' -zcvf ${SNAP_PATH}/${SNAP_NAME} -C ${DATA_PATH} .
