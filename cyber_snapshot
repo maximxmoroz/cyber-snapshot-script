@@ -24,6 +24,9 @@ log_this() {
     printf "|$(now_date)| $logging\n" | tee -a ${LOG_PATH}
 }
 
+log_this "cosmprund data"
+cosmprund prune /mnt/nvme4tb/.cyber/data --cosmos-sdk=true
+
 log_this "remove and create cyber log file"
 rm /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
 touch /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
@@ -49,6 +52,9 @@ rm -fv ${OLD_SNAP} &>>${LOG_PATH}
 
 log_this "add snapshot to ipfs and to file and last block to file"
 ipfs add ${SNAP_PATH}/${SNAP_NAME} | grep -o '\Q\w*' &> /mnt/nvme4tb/shared/ipfs_hash ; echo ${LAST_BLOCK_HEIGHT} &> /mnt/nvme4tb/shared/ipfs_block
+
+log_this "pin ipfs hash"
+ipfs pin ${IPFS_HASH}
 
 log_this "add block to ipfs"
 ipfs add /mnt/nvme4tb/shared/ipfs_block | grep -o '\Q\w*' &> /mnt/nvme4tb/shared/ipfs_block_hash
