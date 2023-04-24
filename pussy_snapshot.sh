@@ -27,12 +27,6 @@ log_this "remove and create pussy log file"
 rm /mnt/nvme4tb/snapshots/pussy/pussy_log.txt
 touch /mnt/nvme4tb/snapshots/pussy/pussy_log.txt
 
-log_this "remove old ipfs pins"
-ipfs pin rm $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_hash); echo $? >> ${PUSSY_LOG_PATH}
-sleep 8
-
-log_this "unpin ipfs hashes"
-ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
 sleep 8
 
 log_this "repo gc"
@@ -80,11 +74,11 @@ sleep 8
 log_this "add cyberlinks from snapshot to block number and from block number to actual snap"
 sleep 8
 /root/go/bin/pussy tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/pussy/tweet_hash) $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_block_hash) --node tcp://0.0.0.0:46657  --from snapshot_bot --keyring-backend test --chain-id space-pussy -y &>> ${PUSSY_LOG_PATH}
-sleep 8
-/root/go/bin/pussy tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_hash) $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_block_hash) --node tcp://0.0.0.0:46657 --from snapshot_bot --keyring-backend test --chain-id space-pussy -y &>> ${PUSSY_LOG_PATH}
-sleep 8
-/root/go/bin/pussy tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/pussy/snap_url_hash) $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_block_hash) --node tcp://0.0.0.0:46657 --from snapshot_bot --keyring-backend test --chain-id space-pussy -y &>> ${PUSSY_LOG_PATH}
-sleep 8
+sleep 80
+/root/go/bin/pussy tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_block_hash) $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_hash) --node tcp://0.0.0.0:46657 --from snapshot_bot --keyring-backend test --chain-id space-pussy -y &>> ${PUSSY_LOG_PATH}
+sleep 80
+/root/go/bin/pussy tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_block_hash) $(cat /mnt/nvme4tb/snapshots/pussy/snap_url_hash) --node tcp://0.0.0.0:46657 --from snapshot_bot --keyring-backend test --chain-id space-pussy -y &>> ${PUSSY_LOG_PATH}
+sleep 80
 /root/go/bin/pussy tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/pussy/ipfs_block_hash) $(cat /mnt/nvme4tb/snapshots/pussy/manual) --node tcp://0.0.0.0:46657 --from snapshot_bot --keyring-backend test --chain-id space-pussy -y &>> ${PUSSY_LOG_PATH}
 sleep 8
 
