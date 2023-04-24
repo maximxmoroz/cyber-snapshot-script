@@ -2,7 +2,7 @@
 PATH='/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin'
 CHAIN_ID="bostrom_pruned"
 SNAP_PATH="/mnt/nvme4tb/shared"
-LOG_PATH="/mnt/nvme4tb/snapshots/cyber/cyber_log.txt"
+LOG_PATH="/mnt/nvme4tb/snapshots/bostrom/cyber_log.txt"
 DATA_PATH="/mnt/nvme4tb/.cyber/"
 SERVICE_NAME="bostrom_pruned"
 RPC_ADDRESS="http://localhost:28957"
@@ -25,11 +25,11 @@ log_this() {
 }
 
 log_this "cosmprund data"
-cosmprund prune /mnt/nvme4tb/.cyber/data --cosmos-sdk=true
+cd /root/cosmprund && ./build/cosmprund prune /mnt/nvme4tb/.cyber/data/ --cosmos-sdk=false
 
 log_this "remove and create cyber log file"
-rm /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
-touch /mnt/nvme4tb/snapshots/cyber/cyber_log.txt
+rm /mnt/nvme4tb/snapshots/bostrom/cyber_log.txt
+touch /mnt/nvme4tb/snapshots/bostrom/cyber_log.txt
 
 log_this "remove old ipfs pins"
 ipfs pin rm ${IPFS_HASH}
@@ -51,29 +51,29 @@ cd ${SNAP_PATH}
 rm -fv ${OLD_SNAP} &>>${LOG_PATH}
 
 log_this "add snapshot to ipfs and to file and last block to file"
-ipfs add ${SNAP_PATH}/${SNAP_NAME} | grep -o '\Q\w*' &> /mnt/nvme4tb/shared/ipfs_hash ; echo ${LAST_BLOCK_HEIGHT} &> /mnt/nvme4tb/shared/ipfs_block
+ipfs add ${SNAP_PATH}/${SNAP_NAME} | grep -o '\Q\w*' &> /mnt/nvme4tb/snapshots/bostrom/ipfs_hash ; echo ${LAST_BLOCK_HEIGHT} &> /mnt/nvme4tb/snapshots/bostrom/ipfs_block
 
 log_this "pin ipfs hash"
 ipfs pin ${IPFS_HASH}
 
 log_this "add block to ipfs"
-ipfs add /mnt/nvme4tb/shared/ipfs_block | grep -o '\Q\w*' &> /mnt/nvme4tb/shared/ipfs_block_hash
+ipfs add /mnt/nvme4tb/snapshots/bostrom/ipfs_block | grep -o '\Q\w*' &> /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash
 
 log_this "add snapshot url to file"
-echo  https://jupiter.cybernode.ai/shared/${SNAP_NAME} &> /mnt/nvme4tb/shared/snap_url
+echo  https://jupiter.cybernode.ai/shared/${SNAP_NAME} &> /mnt/nvme4tb/snapshots/bostrom/snap_url
 
 log_this "add snapshot url to ipfs"
-ipfs add /mnt/nvme4tb/shared/snap_url | grep -o '\Q\w*' &> /mnt/nvme4tb/shared/snap_url_hash
+ipfs add /mnt/nvme4tb/snapshots/bostrom/snap_url | grep -o '\Q\w*' &> /mnt/nvme4tb/snapshots/bostrom/snap_url_hash
 
 STATIC="/mnt/nvme4tb/shared/static"
-SNAP_URL_HASH="/mnt/nvme4tb/shared/snap_url_hash"
-SNAP_URL="/mnt/nvme4tb/shared/snap_url"
-SNAPSHOT_HASH="/mnt/nvme4tb/shared/snapshot_hash"
-IPFS_HASH="/mnt/nvme4tb/shared/ipfs_hash"
-IPFS_BLOCK="/mnt/nvme4tb/shared/ipfs_block"
-IPFS_BLOCK_HASH="/mnt/nvme4tb/shared/ipfs_block_hash"
-TWEET_HASH="/mnt/nvme4tb/shared/tweet_hash"
-MANUAL="/mnt/nvme4tb/shared/manual"
+SNAP_URL_HASH="/mnt/nvme4tb/snapshots/bostrom/snap_url_hash"
+SNAP_URL="/mnt/nvme4tb/snapshots/bostrom/snap_url"
+SNAPSHOT_HASH="/mnt/nvme4tb/snapshots/bostrom/snapshot_hash"
+IPFS_HASH="/mnt/nvme4tb/snapshots/bostrom/ipfs_hash"
+IPFS_BLOCK="/mnt/nvme4tb/snapshots/bostrom/ipfs_block"
+IPFS_BLOCK_HASH="/mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash"
+TWEET_HASH="/mnt/nvme4tb/snapshots/bostrom/tweet_hash"
+MANUAL="/mnt/nvme4tb/snapshots/bostrom/manual"
 
 log_this "add cyberlinks from snapshot to block number and from block number to actual snap"
 sleep 8
