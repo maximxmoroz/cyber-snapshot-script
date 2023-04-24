@@ -44,6 +44,9 @@ log_this "LAST_BLOCK_HEIGHT ${PUSSY_LAST_BLOCK_HEIGHT}"
 log_this "Stopping "${PUSSY_SERVICE_NAME}""
 docker stop ${PUSSY_SERVICE_NAME}; echo $? >> ${PUSSY_LOG_PATH}
 
+log_this "cosmprund data"
+cd /root/cosmprund && ./build/cosmprund prune /mnt/nvme4tb/.pussy/data/ --cosmos-sdk=false
+
 log_this "Creating new snapshot"
 time tar --exclude='config' --exclude='cosmovisor'  --exclude='priv_validator_key.json' --exclude='cache' -zcvf /mnt/nvme4tb/shared/${PUSSY_SNAP_NAME} -C /mnt/nvme4tb/.pussy/ .
 
