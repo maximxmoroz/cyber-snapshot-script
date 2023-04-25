@@ -24,9 +24,6 @@ log_this() {
     printf "|$(now_date)| $logging\n" | tee -a ${LOG_PATH}
 }
 
-log_this "cosmprund data"
-cd /root/cosmprund && ./build/cosmprund prune /mnt/nvme4tb/.cyber/data/ --cosmos-sdk=false
-
 log_this "remove and create cyber log file"
 rm /mnt/nvme4tb/snapshots/bostrom/cyber_log.txt
 touch /mnt/nvme4tb/snapshots/bostrom/cyber_log.txt
@@ -42,6 +39,9 @@ log_this "LAST_BLOCK_HEIGHT ${LAST_BLOCK_HEIGHT}"
 
 log_this "Stopping ${SERVICE_NAME}"
 docker stop ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
+
+log_this "cosmprund data"
+cd /root/cosmprund && ./build/cosmprund prune /mnt/nvme4tb/.cyber/data/ --cosmos-sdk=false
 
 log_this "Creating new snapshot"
 time tar --exclude='bak' --exclude='config' --exclude='cosmovisor' --exclude='cuda-keyring_1.0-1_all.deb' --exclude='priv_validator_key.json' --exclude='cache' -zcvf ${SNAP_PATH}/${SNAP_NAME} -C ${DATA_PATH} .
