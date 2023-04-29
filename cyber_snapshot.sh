@@ -9,7 +9,7 @@ RPC_ADDRESS="http://localhost:28957"
 LAST_BLOCK_HEIGHT=$(docker exec -t bostrom_pruned cyber status | jq -r .SyncInfo.latest_block_height)
 SNAP_NAME=$(echo "${CHAIN_ID}_${LAST_BLOCK_HEIGHT}_$(date '+%Y-%m-%d').tar")
 OLD_SNAP=$(ls ${SNAP_PATH} | egrep -o "${CHAIN_ID}.*tar")
-IPFS_HASH="/mnt/nvme4tb/shared/ipfs_hash"
+IPFS_HASH="/mnt/nvme4tb/snapshots/bostrom/ipfs_hash"
 export IPFS_PATH="/mnt/nvme4tb/.ipfs"
 export CYBER_PATH="/root/.cyber"
 
@@ -29,64 +29,68 @@ rm /mnt/nvme4tb/snapshots/bostrom/cyber_log.txt
 touch /mnt/nvme4tb/snapshots/bostrom/cyber_log.txt
 
 log_this "remove old ipfs pins"
-ipfs pin rm ${IPFS_HASH}
+ipfs pin rm $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_hash); echo $? >> ${LOG_PATH}
+sleep 8
 
-log_this "remove old ipfs garbage"
-ipfs repo gc
+log_this "unpin ipfs hashes"
+ipfs pin ls --type recursive | cut -d' ' -f1 | xargs -n1 ipfs pin rm
+sleep 8
+
+log_this "repo gc"
+ipfs repo gc; echo $? >> ${LOG_PATH}
 sleep 8
 
 log_this "LAST_BLOCK_HEIGHT ${LAST_BLOCK_HEIGHT}"
 
 log_this "Stopping ${SERVICE_NAME}"
 docker stop ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
+sleep 8
 
 log_this "cosmprund data"
 cd /root/cosmprund && ./build/cosmprund prune /mnt/nvme4tb/.cyber/data/ --cosmos-sdk=false
+sleep 8
 
 log_this "Creating new snapshot"
-time tar --exclude='bak' --exclude='config' --exclude='cosmovisor' --exclude='cuda-keyring_1.0-1_all.deb' --exclude='priv_validator_key.json' --exclude='cache' -zcvf ${SNAP_PATH}/${SNAP_NAME} -C ${DATA_PATH} .
+time tar --exclude='bak' --exclude='config' --exclude='cosmovisor' --exclude='cuda-keyring_1.0-1_all.deb' --exclude='priv_validator_key.json' --exclude='cache' -zcvf /mnt/nvme4tb/shared/${SNAP_NAME} -C /mnt/nvme4tb/.cyber/ .
 
 log_this "Removing old snapshot(s):"
-cd ${SNAP_PATH}
-rm -fv ${OLD_SNAP} &>>${LOG_PATH}
+cd ${SNAP_PATH}; echo $? >> ${LOG_PATH}
+rm -fv ${OLD_SNAP} &>> ${LOG_PATH}
 
 log_this "add snapshot to ipfs and to file and last block to file"
-ipfs add ${SNAP_PATH}/${SNAP_NAME} | grep -o '\Q\w*' &> /mnt/nvme4tb/snapshots/bostrom/ipfs_hash ; echo ${LAST_BLOCK_HEIGHT} &> /mnt/nvme4tb/snapshots/bostrom/ipfs_block
+cd /mnt/nvme4tb/shared/ && ipfs add -q bostrom_pruned_*.tar | tee /mnt/nvme4tb/snapshots/bostrom/ipfs_hash
+sleep 8
+
+log_this "add block to file"
+cd /mnt/nvme4tb/shared/ && block_num=$(find . -name "bostrom_pruned_*.tar" | grep -oE '[[:digit:]]{7}' | sed 's/^0*//') && echo $block_num > /mnt/nvme4tb/snapshots/bostrom/ipfs_block
+sleep 8
 
 log_this "pin ipfs hash"
-ipfs pin ${IPFS_HASH}
+ipfs pin add $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_hash)
 
 log_this "add block to ipfs"
-ipfs add /mnt/nvme4tb/snapshots/bostrom/ipfs_block | grep -o '\Q\w*' &> /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash
+ipfs add /mnt/nvme4tb/snapshots/bostrom/ipfs_block | tail -n1 | awk '{print $2}' > /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash
 
 log_this "add snapshot url to file"
-echo  https://jupiter.cybernode.ai/shared/${SNAP_NAME} &> /mnt/nvme4tb/snapshots/bostrom/snap_url
+find /mnt/nvme4tb/shared/ -type f -name 'bostrom_pruned*' -exec echo "https://jupiter.cybernode.ai/shared/{}" \; | head -n1 > /mnt/nvme4tb/snapshots/bostrom/snap_url
 
 log_this "add snapshot url to ipfs"
-ipfs add /mnt/nvme4tb/snapshots/bostrom/snap_url | grep -o '\Q\w*' &> /mnt/nvme4tb/snapshots/bostrom/snap_url_hash
-
-STATIC="/mnt/nvme4tb/shared/static"
-SNAP_URL_HASH="/mnt/nvme4tb/snapshots/bostrom/snap_url_hash"
-SNAP_URL="/mnt/nvme4tb/snapshots/bostrom/snap_url"
-SNAPSHOT_HASH="/mnt/nvme4tb/snapshots/bostrom/snapshot_hash"
-IPFS_HASH="/mnt/nvme4tb/snapshots/bostrom/ipfs_hash"
-IPFS_BLOCK="/mnt/nvme4tb/snapshots/bostrom/ipfs_block"
-IPFS_BLOCK_HASH="/mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash"
-TWEET_HASH="/mnt/nvme4tb/snapshots/bostrom/tweet_hash"
-MANUAL="/mnt/nvme4tb/snapshots/bostrom/manual"
-
-log_this "add cyberlinks from snapshot to block number and from block number to actual snap"
+ipfs add /mnt/nvme4tb/snapshots/bostrom/snap_url | tail -n1 | awk '{print $2}' > /mnt/nvme4tb/snapshots/bostrom/snap_url_hash
 sleep 8
-cyber tx graph cyberlink $(cat ${TWEET_HASH}) $(cat ${IPFS_BLOCK_HASH}) --from snapshot_bot --keyring-backend test --chain-id bostrom -y &>> ${LOG_PATH}
-sleep 8
-cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${IPFS_HASH}) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
-sleep 8
-cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${SNAP_URL_HASH}) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
-sleep 8
-cyber tx graph cyberlink $(cat ${IPFS_BLOCK_HASH}) $(cat ${MANUAL}) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
 
 log_this "Starting ${SERVICE_NAME}"
 docker container start ${SERVICE_NAME}; echo $? >> ${LOG_PATH}
+sleep 8
+
+log_this "add cyberlinks from snapshot to block number and from block number to actual snap"
+sleep 8
+cyber tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/bostrom/tweet_hash) $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash) --from snapshot_bot --keyring-backend test --chain-id bostrom -y &>> ${LOG_PATH}
+sleep 8
+cyber tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash) $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_hash) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
+sleep 8
+cyber tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash) $(cat /mnt/nvme4tb/snapshots/bostrom/snap_url_hash) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
+sleep 8
+cyber tx graph cyberlink $(cat /mnt/nvme4tb/snapshots/bostrom/ipfs_block_hash) $(cat /mnt/nvme4tb/snapshots/bostrom/manual) --from snapshot_bot --keyring-backend test --chain-id bostrom --gas 700000 --gas-prices 0.01boot -y &>> ${LOG_PATH}
 
 du -hs ${SNAP_PATH}/${SNAP_NAME} | tee -a ${LOG_PATH}
 
